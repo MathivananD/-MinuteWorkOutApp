@@ -1,8 +1,12 @@
 package com.example.a7minuteworkout
 
+import android.annotation.SuppressLint
+import android.media.MediaPlayer
+import android.net.Uri
 import android.os.Bundle
 import android.os.CountDownTimer
 import android.speech.tts.TextToSpeech
+import android.text.Layout
 import android.util.Log
 import android.view.View
 import android.widget.Toast
@@ -13,7 +17,11 @@ import androidx.appcompat.app.AppCompatActivity
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
 import com.example.a7minuteworkout.databinding.ActivityExcerciseBinding
+import java.lang.Exception
+import java.net.URI
 import java.util.Locale
+import androidx.core.net.toUri
+import androidx.recyclerview.widget.LinearLayoutManager
 
 class ExerciseActivity : AppCompatActivity(), TextToSpeech.OnInitListener {
     var binding: ActivityExcerciseBinding? = null;
@@ -21,13 +29,12 @@ class ExerciseActivity : AppCompatActivity(), TextToSpeech.OnInitListener {
     private var restProgress = 0;
     private var resetExerciseTimer: CountDownTimer? = null;
     private var restExerciseProgress = 0;
-
     private var exerciseList: ArrayList<ExerciseModel> = ArrayList<ExerciseModel>();
-
     private var currentExercisePosition: Int = -1
-
     private var tts: TextToSpeech? = null
+    private var player: MediaPlayer? = null
 
+    private var exerciseAdapter: MyExerciseStatusAdapter? = null
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         binding = ActivityExcerciseBinding.inflate(layoutInflater)
@@ -37,6 +44,8 @@ class ExerciseActivity : AppCompatActivity(), TextToSpeech.OnInitListener {
         setSupportActionBar(binding?.toolBarExercise)
         supportActionBar?.setDisplayHomeAsUpEnabled(true)
         exerciseList = Constants.defaultExerciseList()
+
+        setUpExercieStatusRecyclerView()
         binding?.toolBarExercise?.setNavigationOnClickListener {
 
             finish()
@@ -46,7 +55,24 @@ class ExerciseActivity : AppCompatActivity(), TextToSpeech.OnInitListener {
         }
     }
 
+    private fun setUpExercieStatusRecyclerView() {
+        exerciseAdapter = MyExerciseStatusAdapter(exerciseList)
+        binding?.rvExerciseStatus?.layoutManager =
+            LinearLayoutManager(this, LinearLayoutManager.HORIZONTAL, false)
+        binding?.rvExerciseStatus?.adapter = exerciseAdapter
+    }
+
     private fun setUpResetView() {
+
+        try {
+            val soundURI =
+                ("android.resource://com.example.a7minuteworkout/" + R.raw.press).toUri()
+            player = MediaPlayer.create(applicationContext, soundURI)
+            player!!.isLooping = false
+            player?.start()
+        } catch (e: Exception) {
+
+        }
         restProgress = 0
         binding?.flRestView?.visibility = View.VISIBLE
         binding?.tvTitle?.text = "Exercise TImer"
@@ -78,7 +104,9 @@ class ExerciseActivity : AppCompatActivity(), TextToSpeech.OnInitListener {
             resetExerciseTimer!!.cancel()
             restExerciseProgress = 0
         }
+
         val exerciseModel = exerciseList[currentExercisePosition];
+        speakOut(exerciseModel.getName())
         binding?.ivImage?.setImageResource(exerciseModel.getImage())
         binding?.tvExerciseName?.text = exerciseModel.getName()
         setRestExerciseProgressBar()
@@ -87,9 +115,13 @@ class ExerciseActivity : AppCompatActivity(), TextToSpeech.OnInitListener {
     private fun setRestProgressBar() {
         binding?.progressBar?.progress = restProgress
         resetTimer = object : CountDownTimer(10000, 1000) {
+            @SuppressLint("NotifyDataSetChanged")
             override fun onFinish() {
 //                Toast.makeText(this@ExerciseActivity, "Done", Toast.LENGTH_SHORT).show()
                 currentExercisePosition++
+                exerciseList[currentExercisePosition].setIsSelected(true)
+                exerciseAdapter!!.notifyDataSetChanged()
+
                 setUpExerciseTimer()
 
             }
@@ -111,6 +143,9 @@ class ExerciseActivity : AppCompatActivity(), TextToSpeech.OnInitListener {
         resetExerciseTimer = object : CountDownTimer(30000, 1000) {
             override fun onFinish() {
                 if (currentExercisePosition < exerciseList.size - 1) {
+                    exerciseList[currentExercisePosition].setIsSelected(false)
+                    exerciseList[currentExercisePosition].setIsCompleted(true)
+                    exerciseAdapter!!.notifyDataSetChanged()
                     setUpResetView()
 
                 } else {
@@ -140,6 +175,11 @@ class ExerciseActivity : AppCompatActivity(), TextToSpeech.OnInitListener {
             resetExerciseTimer!!.cancel()
         }
         binding = null
+        if (tts != null) {
+            tts!!.stop()
+            tts!!.shutdown()
+
+        }
     }
 
     override fun onInit(status: Int) {
