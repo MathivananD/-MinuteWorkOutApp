@@ -44,7 +44,7 @@ class MyExerciseStatusAdapter(val items: ArrayList<ExerciseModel>) :
             model.getIsSelected() -> {
                 holder.tvItem.background = ContextCompat.getDrawable(
                     holder.tvItem.context,
-                    R.drawable.item_circular_color_white_background
+                    R.drawable.item_circular_color_white_border_background
                 )
                 holder.tvItem
                     .setTextColor("#212121".toColorInt())
@@ -56,7 +56,7 @@ class MyExerciseStatusAdapter(val items: ArrayList<ExerciseModel>) :
                     R.drawable.item_circular_color_white_background
                 )
                 holder.tvItem
-                    .setTextColor(R.color.colorAccent)
+                    .setTextColor("#FFFFFF".toColorInt())
 
             }
 

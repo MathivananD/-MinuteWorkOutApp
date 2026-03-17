@@ -27,8 +27,12 @@ class ExerciseActivity : AppCompatActivity(), TextToSpeech.OnInitListener {
     var binding: ActivityExcerciseBinding? = null;
     private var resetTimer: CountDownTimer? = null;
     private var restProgress = 0;
+
+    private var restTimerProgress: Long = 10;
+    private var timeInterval: Long = 1;
     private var resetExerciseTimer: CountDownTimer? = null;
     private var restExerciseProgress = 0;
+    private var restTimerExerciseProgress: Long = 30;
     private var exerciseList: ArrayList<ExerciseModel> = ArrayList<ExerciseModel>();
     private var currentExercisePosition: Int = -1
     private var tts: TextToSpeech? = null
@@ -37,8 +41,10 @@ class ExerciseActivity : AppCompatActivity(), TextToSpeech.OnInitListener {
     private var exerciseAdapter: MyExerciseStatusAdapter? = null
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+
         binding = ActivityExcerciseBinding.inflate(layoutInflater)
         tts = TextToSpeech(this, this)
+
         enableEdgeToEdge()
         setContentView(binding?.root)
         setSupportActionBar(binding?.toolBarExercise)
@@ -50,9 +56,7 @@ class ExerciseActivity : AppCompatActivity(), TextToSpeech.OnInitListener {
 
             finish()
         }
-        binding?.flRestView?.setOnClickListener {
-            setUpResetView()
-        }
+        setUpResetView()
     }
 
     private fun setUpExercieStatusRecyclerView() {
@@ -64,15 +68,15 @@ class ExerciseActivity : AppCompatActivity(), TextToSpeech.OnInitListener {
 
     private fun setUpResetView() {
 
-        try {
-            val soundURI =
-                ("android.resource://com.example.a7minuteworkout/" + R.raw.press).toUri()
-            player = MediaPlayer.create(applicationContext, soundURI)
-            player!!.isLooping = false
-            player?.start()
-        } catch (e: Exception) {
-
-        }
+//        try {
+//            val soundURI =
+//                ("android.resource://com.example.a7minuteworkout/" + R.raw.press).toUri()
+//            player = MediaPlayer.create(applicationContext, soundURI)
+//            player!!.isLooping = false
+//            player?.start()
+//        } catch (e: Exception) {
+//
+//        }
         restProgress = 0
         binding?.flRestView?.visibility = View.VISIBLE
         binding?.tvTitle?.text = "Exercise TImer"
@@ -114,7 +118,10 @@ class ExerciseActivity : AppCompatActivity(), TextToSpeech.OnInitListener {
 
     private fun setRestProgressBar() {
         binding?.progressBar?.progress = restProgress
-        resetTimer = object : CountDownTimer(10000, 1000) {
+        resetTimer = object : CountDownTimer(
+            secondsToMilliSeconds(restTimerProgress),
+            secondsToMilliSeconds(timeInterval)
+        ) {
             @SuppressLint("NotifyDataSetChanged")
             override fun onFinish() {
 //                Toast.makeText(this@ExerciseActivity, "Done", Toast.LENGTH_SHORT).show()
@@ -140,7 +147,11 @@ class ExerciseActivity : AppCompatActivity(), TextToSpeech.OnInitListener {
 
     private fun setRestExerciseProgressBar() {
         binding?.progressExerciseBar?.progress = restExerciseProgress
-        resetExerciseTimer = object : CountDownTimer(30000, 1000) {
+        resetExerciseTimer = object : CountDownTimer(
+            secondsToMilliSeconds(restTimerExerciseProgress),
+            secondsToMilliSeconds(timeInterval)
+        ) {
+            @SuppressLint("NotifyDataSetChanged")
             override fun onFinish() {
                 if (currentExercisePosition < exerciseList.size - 1) {
                     exerciseList[currentExercisePosition].setIsSelected(false)
@@ -198,5 +209,8 @@ class ExerciseActivity : AppCompatActivity(), TextToSpeech.OnInitListener {
         tts!!.speak(text, TextToSpeech.QUEUE_ADD, null, "")
     }
 
+    private fun secondsToMilliSeconds(seconds: Long): Long {
+        return seconds * 1000
+    }
 
 }
